@@ -1,0 +1,16 @@
+# Environment & secrets
+.env
+*.pem
+*.key
+
+# Persistent n8n & Caddy runtime data
+data/
+files/
+caddy_data/
+caddy_config/
+Caddyfile
+
+# OS & editor files
+.DS_Store
+Thumbs.db
+.vscode/
