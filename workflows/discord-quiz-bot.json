@@ -1,0 +1,279 @@
+{
+  "name": "Discord Daily Quiz Bot",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 9,
+              "triggerAtMinute": 0
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        0,
+        -80
+      ],
+      "id": "600ade65-f900-4ecf-8f89-6108247705e0",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1. Define Catalog: Google Drive PDF File IDs vs. Gemini Web Search topics\nconst catalog = [\n  // --- PDF SOURCES (Google Drive File IDs) ---\n  {\n    sourceName: \"Reference-Guide-1.pdf\",\n    type: \"pdf\",\n    fileId: \"YOUR_GOOGLE_DRIVE_FILE_ID_1\",\n    category: \"Category A\"\n  },\n  {\n    sourceName: \"Reference-Guide-2.pdf\",\n    type: \"pdf\",\n    fileId: \"YOUR_GOOGLE_DRIVE_FILE_ID_2\",\n    category: \"Category B\"\n  },\n\n  // --- GEMINI WEB SEARCH TOPICS ---\n  {\n    sourceName: \"Core Concepts & Fundamentals\",\n    type: \"web\",\n    searchTopic: \"Core principles, foundational frameworks, and real-world best practices in YOUR_TOPIC_DOMAIN\",\n    category: \"Fundamentals\"\n  },\n  {\n    sourceName: \"Advanced Practices & Edge Cases\",\n    type: \"web\",\n    searchTopic: \"Advanced techniques, common pitfalls, and troubleshooting scenarios in YOUR_TOPIC_DOMAIN\",\n    category: \"Advanced Topics\"\n  }\n];\n\n// 2. Select a random item from the catalog\nconst randomIndex = Math.floor(Math.random() * catalog.length);\nconst selectedSource = catalog[randomIndex];\n\n// 3. Return standardized payload\nreturn [\n  {\n    json: {\n      timestamp: new Date().toISOString(),\n      ...selectedSource\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        -80
+      ],
+      "id": "594570ab-acf6-4ddd-aa8e-6a86b417494d",
+      "name": "Catalog"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.type }}",
+                    "rightValue": "pdf",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "c36d450c-d144-46f7-9194-1e650ec325cb"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "5fd6d32e-6bdc-4a89-93de-2de9158b3b2e",
+                    "leftValue": "={{ $json.type }}",
+                    "rightValue": "web",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        448,
+        -80
+      ],
+      "id": "17279801-27ac-4b18-8f3d-157bcee54765",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "jsCode": "const catalogData = $('Catalog').item.json;\nconst extractData =$input.item.json;\n\nconst rawText = extractData.text || '';\nconst totalPages = extractData.numpages || 1;\nconst charsPerPage = Math.max(1500, Math.floor(rawText.length / totalPages));\n\n// Helper function to detect TOC, front matter, or low-value pages\nfunction isSkippableChunk(text) {\n  if (!text || text.trim().length < 350) return true;\n\n  const lower = text.toLowerCase();\n\n  // 1. Explicit front/back matter headings\n  const skipKeywords = [\n    'table of contents',\n    'list of figures',\n    'list of tables',\n    'isbn-13',\n    'isbn-10',\n    'all rights reserved',\n    'acknowledgments',\n    'acknowledgements',\n    'glossary',\n    'bibliography'\n  ];\n  if (skipKeywords.some(kw => lower.includes(kw))) return true;\n\n  // 2. TOC dot-leader pattern (e.g., \"1.2 Purpose ........ 14\")\n  const dotLeaders = (text.match(/\\.{4,}/g) || []).length;\n  if (dotLeaders >= 4) return true;\n\n  // 3. High ratio of lines ending in page numbers\n  const lines = text.split('\\n').map(l => l.trim()).filter(Boolean);\n  const linesEndingInPageNum = lines.filter(l => /\\s+\\d{1,4}$/.test(l)).length;\n  if (lines.length > 8 && (linesEndingInPageNum / lines.length) > 0.35) return true;\n\n  return false;\n}\n\n// Pick a random page chunk (skipping first 3% front matter and last 5% back matter)\nlet actualPageNumber = 1;\nlet selectedPageText = '';\n\nconst minPage = Math.max(1, Math.floor(totalPages * 0.03));\nconst maxPage = Math.max(minPage + 1, Math.floor(totalPages * 0.95));\n\nfor (let attempt = 0; attempt < 25; attempt++) {\n  const candidatePage = Math.floor(Math.random() * (maxPage - minPage)) + minPage;\n  const startChar = (candidatePage - 1) * charsPerPage;\n  const endChar = Math.min(rawText.length, startChar + charsPerPage + 400);\n\n  let chunk = rawText.slice(startChar, endChar);\n\n  // Snap start and end to clean paragraph/sentence boundaries\n  const firstNewline = chunk.indexOf('\\n');\n  if (firstNewline > 0 && firstNewline < 200) {\n    chunk = chunk.slice(firstNewline + 1);\n  }\n  const lastPeriod = chunk.lastIndexOf('.');\n  if (lastPeriod > chunk.length * 0.6) {\n    chunk = chunk.slice(0, lastPeriod + 1);\n  }\n\n  chunk = chunk.trim();\n\n  if (!isSkippableChunk(chunk) || attempt === 24) {\n    actualPageNumber = candidatePage;\n    selectedPageText = chunk;\n    break;\n  }\n}\n\n// Randomize quiz format\nconst randomValue = Math.random();\nlet selectedFormat = \"Single Choice\";\nif (randomValue > 0.7) {\n  selectedFormat = \"Short Answer\";\n} else if (randomValue > 0.4) {\n  selectedFormat = \"Multiple Choice\";\n}\n\nreturn [\n  {\n    json: {\n      timestamp: new Date().toISOString(),\n      sourceType: catalogData.type || \"pdf\",\n      sourceName: catalogData.sourceName,\n      category: catalogData.category,\n      referencePage: actualPageNumber,\n      extractedContent: selectedPageText,\n      sourceCitation: `${catalogData.sourceName} - Page ~${actualPageNumber}`,\n      targetFormat: selectedFormat\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1248,
+        -176
+      ],
+      "id": "f47ef175-89b6-48e7-9bd7-2b5725e286a6",
+      "name": "Random Page"
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.fileId }}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        736,
+        -176
+      ],
+      "id": "ada81fc2-d24b-42fb-8c8e-a7dbd2baa425",
+      "name": "Download file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "YOUR_GOOGLE_DRIVE_CREDENTIAL_ID",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 3,
+        "unit": "hours"
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        3168,
+        -80
+      ],
+      "id": "7e01908d-f383-41e5-a4f1-d5f3934231bc",
+      "name": "Wait",
+      "webhookId": "e4eef5e8-9338-4c21-9fd5-764838b34f63"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://discord.com/api/v10/channels/YOUR_DISCORD_FORUM_CHANNEL_ID/threads",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "discordBotApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{\n{\n  \"name\": `Quiz \"${$json.category}\"`,\n  \"message\": {\n    \"content\": `### 📝 Daily Knowledge Quiz\n**Category:** ${$json.category}\n**Type:** ${$json.questionType}\n---\n**Question:**\n${$json.question}\n${$json.options && $json.options.length > 0 ? \"---\\n\\n**Options:**\\n\" + $json.options.join(\"\\n\") : \"\"}\n---\n💡 **How to Answer:**\n${\n  $json.questionType === 'Short Answer'\n    ? '• Type `/ans` and enter your 2–3 sentence response.\\n• The bot will evaluate your answer privately or you can review the official key in 3 hours.'\n    : $json.questionType === 'Multiple Choice'\n    ? '• Select all correct options from the dropdown below and submit.\\n• You will get an instant private reply with feedback!'\n    : '• Click one of the buttons below (A, B, C, or D) to submit your answer.\\n• You will get an instant private reply with feedback!'\n}\\n• Official breakdown posted in **3 hours**.`,\n    \"components\": $json.questionType === 'Short Answer' \n      ? [] \n      : $json.questionType === 'Multiple Choice'\n      ? [\n          {\n            \"type\": 1,\n            \"components\": [\n              {\n                \"type\": 3,\n                \"custom_id\": \"quiz_select_multi\",\n                \"options\": $json.options.map((opt, i) => ({\n                  \"label\": opt.substring(0, 25),\n                  \"value\": String.fromCharCode(65 + i),\n                  \"description\": opt.substring(0, 50)\n                })),\n                \"placeholder\": \"Choose your answers...\",\n                \"min_values\": 1,\n                \"max_values\": 4\n              }\n            ]\n          }\n        ]\n      : [\n          {\n            \"type\": 1,\n            \"components\": [\n              { \"type\": 2, \"label\": \"A\", \"style\": 1, \"custom_id\": \"quiz_opt_A\" },\n              { \"type\": 2, \"label\": \"B\", \"style\": 1, \"custom_id\": \"quiz_opt_B\" },\n              { \"type\": 2, \"label\": \"C\", \"style\": 1, \"custom_id\": \"quiz_opt_C\" },\n              { \"type\": 2, \"label\": \"D\", \"style\": 1, \"custom_id\": \"quiz_opt_D\" }\n            ]\n          }\n        ]\n  }\n}\n}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        2048,
+        -176
+      ],
+      "id": "f1f911e7-c1ca-43cb-9daf-b9b8313cff40",
+      "name": "Post Quiz as New Thread",
+      "credentials": {
+        "discordBotApi": {
+          "id": "YOUR_DISCORD_BOT_CREDENTIAL_ID",
+          "name": "Discord Bot account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://discord.com/api/v10/channels/{{ $json.threadId }}/messages",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "discordBotApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{\n{\n  \"content\": `⏰ **Time's up! Here is the official breakdown:**\\n\\n✅ **Correct Answer:**\\n${$json.correctAnswer}\\n\\n💡 **Explanation:**\\n${$json.explanationIntro || ''}\\n> ${($json.explanationQuote || $json.explanation || '').replace(/^\\*+|\\*+$/g, '').trim()}${ ($json.webReferences && $json.webReferences.length) ? '\\n\\n🔗 **References:**\\n' + $json.webReferences.map(u => `<${u}>`).join('\\n') : '' }\\n\\n**Source: **\\n${$json.sourceCitation}`\n}\n}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        3392,
+        -80
+      ],
+      "id": "fe07a611-6d72-499a-b755-8272c31db791",
+      "name": "Post Public Answer",
+      "credentials": {
+        "discordBotApi": {
+          "id": "YOUR_DISCORD_BOT_CREDENTIAL_ID",
+          "name": "Discord Bot account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const catalogData = $('Catalog').first().json;\nconst searchResults =$input.first().json.results || [];\n\n// Extract 100% real, verified URLs from search response\nconst verifiedUrls = searchResults.map(r => r.url).filter(Boolean);\n\n// Weighted format selection (50% Single Choice, 30% Multiple Choice, 20% Short Answer)\nconst randomValue = Math.random();\nlet selectedFormat = \"Single Choice\";\nif (randomValue > 0.8) {\n  selectedFormat = \"Short Answer\";\n} else if (randomValue > 0.5) {\n  selectedFormat = \"Multiple Choice\";\n}\n\nreturn [\n  {\n    json: {\n      timestamp: new Date().toISOString(),\n      sourceType: \"web_topic\",\n      sourceName: catalogData.sourceName,\n      searchTopic: $('Generate Topics').first().json.content?.parts?.[0]?.text || catalogData.searchTopic,\n      verifiedUrls: verifiedUrls,\n      category: catalogData.category,\n      sourceCitation: `${catalogData.sourceName} - Web Reference`,\n      targetFormat: selectedFormat\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1248,
+        16
+      ],
+      "id": "4f96d796-d023-43cd-beca-8d45e711d4a8",
+      "name": "Prepare Topic"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-flash-lite-latest",
+          "mode": "list",
+          "cachedResultName": "models/gemini-flash-lite-latest"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are a Subject Matter Expert and Educator.\n\nGiven the following domain reference:\n- Source Name: {{ $json.sourceName }}\n- Core Category: {{ $json.category }}\n- Baseline Focus Areas: {{$json.searchTopic }}\n\nGenerate ONE specific, highly realistic focus scenario or niche sub-topic within this domain.\nFocus on practical real-world challenges, common misunderstandings, edge cases, or core mechanics.\n\nOutput ONLY a single raw text string (1-2 sentences) describing the generated sub-topic. Do not include markdown headers, quotes, or JSON wrapping."
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        672,
+        16
+      ],
+      "id": "42f58e01-ebdf-4620-9dc4-7446c0a5a591",
+      "name": "Generate Topics",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "YOUR_GOOGLE_GEMINI_CREDENTIAL_ID",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-flash-lite-latest",
+          "mode": "list",
+          "cachedResultName": "models/gemini-flash-lite-latest"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are an expert examiner creating assessment questions for learners.\n\nGenerate ONE high-quality quiz question based on the topic below.\n\nSOURCE METADATA:\n- Source: {{ $json.sourceName }}\n- Category: {{ $json.category }}\n- Reference: {{$json.sourceCitation }}\n\nTOPIC & FOCUS SCENARIO:\n\"\"\"\n{{ $json.searchTopic }}\n\"\"\"\n\nVERIFIED SOURCE URLS (Select 1-2 URLs ONLY from this list):\n{{ JSON.stringify($json.verifiedUrls) }}\n\nQUESTION REQUIREMENTS:\n1. You MUST generate a question strictly matching this target format: {{ $json.targetFormat }}\n   - If \"Single Choice\": Provide 4 options (A-D) with exactly 1 correct answer.\n   - If \"Multiple Choice\": Provide 4 options (A-D) with 2 or 3 correct answers. Explicitly state how many correct answers to select in the question text.\n   - If \"Short Answer\": Set \"options\" to an empty array []. Provide key grading criteria in \"correctAnswer\".\n\n2. FORMATTING RULES FOR EXPLANATION & REFERENCES:\n   - Wrap core quotes or direct principles inside single asterisks for Markdown italics (e.g., *this is a key principle*).\n   - DO NOT use double quotes (\"...\") for quotes inside the explanation string.\n   - For \"webReferences\", pick 1 to 3 URLs ONLY from the VERIFIED SOURCE URLS list above. Do NOT invent or construct any new URLs.\n\n3. Output the response in clean JSON format matching this exact schema:\n\n{\n  \"questionType\": \"{{ $json.targetFormat }}\",\n  \"category\": \"{{ $json.category }}\",\n  \"sourceCitation\": \"{{ $json.sourceCitation }}\",\n  \"question\": \"Clear and scenario-based or conceptual question\",\n  \"options\": [\n    \"A) Option 1\",\n    \"B) Option 2\",\n    \"C) Option 3\",\n    \"D) Option 4\"\n  ],\n  \"correctAnswer\": \"Exact correct option letter(s) or key grading points for short answer\",\n  \"explanationIntro\": \"Brief context explaining why this choice is correct.\",\n  \"explanationQuote\": \"Exact rule, definition, or concept formatted strictly using Markdown italics like *this exact principle*.\",\n  \"webReferences\": [\n    \"SELECTED_VERIFIED_URL\"\n  ]\n}\n\nNote: For \"Short Answer\" format, set \"options\" to an empty array [].\nReturn ONLY valid JSON without markdown wrapping."
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        1472,
+        16
+      ],
+      "id": "f2d4666f-098d-4405-bc7f-4d3a6a5b846c",
+      "name": "Generate Quiz (web)",
+      "retryOnFail": true,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "YOUR_
