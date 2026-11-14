@@ -15,10 +15,10 @@
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.4,
       "position": [
-        0,
-        -80
+        -448,
+        144
       ],
-      "id": "600ade65-f900-4ecf-8f89-6108247705e0",
+      "id": "3c0269cb-ecdd-45a1-b6f6-2e720fd32727",
       "name": "Schedule Trigger"
     },
     {
@@ -28,10 +28,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        224,
-        -80
+        -224,
+        144
       ],
-      "id": "594570ab-acf6-4ddd-aa8e-6a86b417494d",
+      "id": "8852c810-6fbf-4d92-9bea-15262fa5f07f",
       "name": "Catalog"
     },
     {
@@ -90,23 +90,23 @@
       "type": "n8n-nodes-base.switch",
       "typeVersion": 3.4,
       "position": [
-        448,
-        -80
+        0,
+        144
       ],
-      "id": "17279801-27ac-4b18-8f3d-157bcee54765",
+      "id": "72233472-b5d2-4c14-b013-73d5f0b9f26e",
       "name": "Switch"
     },
     {
       "parameters": {
-        "jsCode": "const catalogData = $('Catalog').item.json;\nconst extractData =$input.item.json;\n\nconst rawText = extractData.text || '';\nconst totalPages = extractData.numpages || 1;\nconst charsPerPage = Math.max(1500, Math.floor(rawText.length / totalPages));\n\n// Helper function to detect TOC, front matter, or low-value pages\nfunction isSkippableChunk(text) {\n  if (!text || text.trim().length < 350) return true;\n\n  const lower = text.toLowerCase();\n\n  // 1. Explicit front/back matter headings\n  const skipKeywords = [\n    'table of contents',\n    'list of figures',\n    'list of tables',\n    'isbn-13',\n    'isbn-10',\n    'all rights reserved',\n    'acknowledgments',\n    'acknowledgements',\n    'glossary',\n    'bibliography'\n  ];\n  if (skipKeywords.some(kw => lower.includes(kw))) return true;\n\n  // 2. TOC dot-leader pattern (e.g., \"1.2 Purpose ........ 14\")\n  const dotLeaders = (text.match(/\\.{4,}/g) || []).length;\n  if (dotLeaders >= 4) return true;\n\n  // 3. High ratio of lines ending in page numbers\n  const lines = text.split('\\n').map(l => l.trim()).filter(Boolean);\n  const linesEndingInPageNum = lines.filter(l => /\\s+\\d{1,4}$/.test(l)).length;\n  if (lines.length > 8 && (linesEndingInPageNum / lines.length) > 0.35) return true;\n\n  return false;\n}\n\n// Pick a random page chunk (skipping first 3% front matter and last 5% back matter)\nlet actualPageNumber = 1;\nlet selectedPageText = '';\n\nconst minPage = Math.max(1, Math.floor(totalPages * 0.03));\nconst maxPage = Math.max(minPage + 1, Math.floor(totalPages * 0.95));\n\nfor (let attempt = 0; attempt < 25; attempt++) {\n  const candidatePage = Math.floor(Math.random() * (maxPage - minPage)) + minPage;\n  const startChar = (candidatePage - 1) * charsPerPage;\n  const endChar = Math.min(rawText.length, startChar + charsPerPage + 400);\n\n  let chunk = rawText.slice(startChar, endChar);\n\n  // Snap start and end to clean paragraph/sentence boundaries\n  const firstNewline = chunk.indexOf('\\n');\n  if (firstNewline > 0 && firstNewline < 200) {\n    chunk = chunk.slice(firstNewline + 1);\n  }\n  const lastPeriod = chunk.lastIndexOf('.');\n  if (lastPeriod > chunk.length * 0.6) {\n    chunk = chunk.slice(0, lastPeriod + 1);\n  }\n\n  chunk = chunk.trim();\n\n  if (!isSkippableChunk(chunk) || attempt === 24) {\n    actualPageNumber = candidatePage;\n    selectedPageText = chunk;\n    break;\n  }\n}\n\n// Randomize quiz format\nconst randomValue = Math.random();\nlet selectedFormat = \"Single Choice\";\nif (randomValue > 0.7) {\n  selectedFormat = \"Short Answer\";\n} else if (randomValue > 0.4) {\n  selectedFormat = \"Multiple Choice\";\n}\n\nreturn [\n  {\n    json: {\n      timestamp: new Date().toISOString(),\n      sourceType: catalogData.type || \"pdf\",\n      sourceName: catalogData.sourceName,\n      category: catalogData.category,\n      referencePage: actualPageNumber,\n      extractedContent: selectedPageText,\n      sourceCitation: `${catalogData.sourceName} - Page ~${actualPageNumber}`,\n      targetFormat: selectedFormat\n    }\n  }\n];"
+        "jsCode": "const catalogData = $('Catalog').item.json;\nconst extractData =$input.item.json;\n\nconst rawText = extractData.text || '';\nconst totalPages = extractData.numpages || 1;\nconst charsPerPage = Math.max(1500, Math.floor(rawText.length / totalPages));\n\n// Helper function to detect TOC, front matter, or low-value pages\nfunction isSkippableChunk(text) {\n  if (!text || text.trim().length < 350) return true;\n\n  const lower = text.toLowerCase();\n\n  // 1. Explicit front/back matter headings\n  const skipKeywords = [\n    'table of contents',\n    'list of figures',\n    'list of tables',\n    'isbn-13',\n    'isbn-10',\n    'all rights reserved',\n    'acknowledgments',\n    'acknowledgements',\n    'glossary',\n    'bibliography'\n  ];\n  if (skipKeywords.some(kw => lower.includes(kw))) return true;\n\n  // 2. TOC dot-leader pattern (e.g., \"1.2 Purpose ........ 14\")\n  const dotLeaders = (text.match(/\\.{4,}/g) || []).length;\n  if (dotLeaders >= 4) return true;\n\n  // 3. High ratio of lines ending in page numbers\n  const lines = text.split('\\n').map(l => l.trim()).filter(Boolean);\n  const linesEndingInPageNum = lines.filter(l => /\\s+\\d{1,4}$/.test(l)).length;\n  if (lines.length > 8 && (linesEndingInPageNum / lines.length) > 0.35) return true;\n\n  return false;\n}\n\n// Pick a random page chunk (skipping first 3% front matter and last 5% back matter)\nlet actualPageNumber = 1;\nlet selectedPageText = '';\n\nconst minPage = Math.max(1, Math.floor(totalPages * 0.03));\nconst maxPage = Math.max(minPage + 1, Math.floor(totalPages * 0.95));\n\nfor (let attempt = 0; attempt < 25; attempt++) {\n  const candidatePage = Math.floor(Math.random() * (maxPage - minPage)) + minPage;\n  const startChar = (candidatePage - 1) * charsPerPage;\n  const endChar = Math.min(rawText.length, startChar + charsPerPage + 400); // +400 buffer to finish paragraph\n\n  let chunk = rawText.slice(startChar, endChar);\n\n  // Snap start and end to clean paragraph/sentence boundaries\n  const firstNewline = chunk.indexOf('\\n');\n  if (firstNewline > 0 && firstNewline < 200) {\n    chunk = chunk.slice(firstNewline + 1);\n  }\n  const lastPeriod = chunk.lastIndexOf('.');\n  if (lastPeriod > chunk.length * 0.6) {\n    chunk = chunk.slice(0, lastPeriod + 1);\n  }\n\n  chunk = chunk.trim();\n\n  if (!isSkippableChunk(chunk) || attempt === 24) {\n    actualPageNumber = candidatePage;\n    selectedPageText = chunk;\n    break;\n  }\n}\n\n// Randomize quiz format\nconst randomValue = Math.random();\nlet selectedFormat = \"Single Choice\";\nif (randomValue > 0.7) {\n  selectedFormat = \"Short Answer\";\n} else if (randomValue > 0.4) {\n  selectedFormat = \"Multiple Choice\";\n}\n\nreturn [\n  {\n    json: {\n      timestamp: new Date().toISOString(),\n      sourceType: catalogData.type || \"pdf\",\n      sourceName: catalogData.sourceName,\n      category: catalogData.category,\n      referencePage: actualPageNumber,\n      extractedContent: selectedPageText,\n      sourceCitation: `${catalogData.sourceName} - Page ~${actualPageNumber}`,\n      targetFormat: selectedFormat\n    }\n  }\n];"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1248,
-        -176
+        800,
+        48
       ],
-      "id": "f47ef175-89b6-48e7-9bd7-2b5725e286a6",
+      "id": "75fd5c29-a493-4b16-b4cc-9ec9409dffa1",
       "name": "Random Page"
     },
     {
@@ -122,10 +122,10 @@
       "type": "n8n-nodes-base.googleDrive",
       "typeVersion": 3,
       "position": [
-        736,
-        -176
+        288,
+        48
       ],
-      "id": "ada81fc2-d24b-42fb-8c8e-a7dbd2baa425",
+      "id": "2e192b19-2a0d-45e3-bfbd-5028773235d7",
       "name": "Download file",
       "credentials": {
         "googleDriveOAuth2Api": {
@@ -142,10 +142,10 @@
       "type": "n8n-nodes-base.wait",
       "typeVersion": 1.1,
       "position": [
-        3168,
-        -80
+        2720,
+        144
       ],
-      "id": "7e01908d-f383-41e5-a4f1-d5f3934231bc",
+      "id": "2c5fc910-22b4-4b0e-a1af-18e2fc3de559",
       "name": "Wait",
       "webhookId": "e4eef5e8-9338-4c21-9fd5-764838b34f63"
     },
@@ -163,10 +163,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.5,
       "position": [
-        2048,
-        -176
+        1600,
+        48
       ],
-      "id": "f1f911e7-c1ca-43cb-9daf-b9b8313cff40",
+      "id": "d4a62f39-0701-49a0-95a7-1207c2c5e4cd",
       "name": "Post Quiz as New Thread",
       "credentials": {
         "discordBotApi": {
@@ -189,10 +189,10 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.5,
       "position": [
-        3392,
-        -80
+        2944,
+        144
       ],
-      "id": "fe07a611-6d72-499a-b755-8272c31db791",
+      "id": "d2e04a3b-aae2-48a6-9bbb-42a90d3c9fed",
       "name": "Post Public Answer",
       "credentials": {
         "discordBotApi": {
@@ -208,10 +208,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1248,
-        16
+        800,
+        240
       ],
-      "id": "4f96d796-d023-43cd-beca-8d45e711d4a8",
+      "id": "a0e08edd-b063-496d-84a1-0cc3d2ddf08b",
       "name": "Prepare Topic"
     },
     {
@@ -235,10 +235,10 @@
       "type": "@n8n/n8n-nodes-langchain.googleGemini",
       "typeVersion": 1.2,
       "position": [
-        672,
-        16
+        224,
+        240
       ],
-      "id": "42f58e01-ebdf-4620-9dc4-7446c0a5a591",
+      "id": "45443063-6787-4649-9d29-769067e53935",
       "name": "Generate Topics",
       "credentials": {
         "googlePalmApi": {
@@ -258,7 +258,7 @@
         "messages": {
           "values": [
             {
-              "content": "=You are an expert examiner creating assessment questions for learners.\n\nGenerate ONE high-quality quiz question based on the topic below.\n\nSOURCE METADATA:\n- Source: {{ $json.sourceName }}\n- Category: {{ $json.category }}\n- Reference: {{$json.sourceCitation }}\n\nTOPIC & FOCUS SCENARIO:\n\"\"\"\n{{ $json.searchTopic }}\n\"\"\"\n\nVERIFIED SOURCE URLS (Select 1-2 URLs ONLY from this list):\n{{ JSON.stringify($json.verifiedUrls) }}\n\nQUESTION REQUIREMENTS:\n1. You MUST generate a question strictly matching this target format: {{ $json.targetFormat }}\n   - If \"Single Choice\": Provide 4 options (A-D) with exactly 1 correct answer.\n   - If \"Multiple Choice\": Provide 4 options (A-D) with 2 or 3 correct answers. Explicitly state how many correct answers to select in the question text.\n   - If \"Short Answer\": Set \"options\" to an empty array []. Provide key grading criteria in \"correctAnswer\".\n\n2. FORMATTING RULES FOR EXPLANATION & REFERENCES:\n   - Wrap core quotes or direct principles inside single asterisks for Markdown italics (e.g., *this is a key principle*).\n   - DO NOT use double quotes (\"...\") for quotes inside the explanation string.\n   - For \"webReferences\", pick 1 to 3 URLs ONLY from the VERIFIED SOURCE URLS list above. Do NOT invent or construct any new URLs.\n\n3. Output the response in clean JSON format matching this exact schema:\n\n{\n  \"questionType\": \"{{ $json.targetFormat }}\",\n  \"category\": \"{{ $json.category }}\",\n  \"sourceCitation\": \"{{ $json.sourceCitation }}\",\n  \"question\": \"Clear and scenario-based or conceptual question\",\n  \"options\": [\n    \"A) Option 1\",\n    \"B) Option 2\",\n    \"C) Option 3\",\n    \"D) Option 4\"\n  ],\n  \"correctAnswer\": \"Exact correct option letter(s) or key grading points for short answer\",\n  \"explanationIntro\": \"Brief context explaining why this choice is correct.\",\n  \"explanationQuote\": \"Exact rule, definition, or concept formatted strictly using Markdown italics like *this exact principle*.\",\n  \"webReferences\": [\n    \"SELECTED_VERIFIED_URL\"\n  ]\n}\n\nNote: For \"Short Answer\" format, set \"options\" to an empty array [].\nReturn ONLY valid JSON without markdown wrapping."
+              "content": "=You are an expert examiner creating assessment questions for learners.\n\nGenerate ONE high-quality quiz question based on the topic below.\n\nSOURCE METADATA:\n- Source: {{ $json.sourceName }}\n- Category: {{ $json.category }}\n- Reference: {{$json.sourceCitation }}\n\nTOPIC & FOCUS SCENARIO:\n\"\"\"\n{{ $json.searchTopic }}\n\"\"\"\n\nVERIFIED SOURCE URLS (Select 1-2 URLs ONLY from this list):\n{{ JSON.stringify($json.verifiedUrls) }}\n\nQUESTION REQUIREMENTS:\n1. You MUST generate a question strictly matching this target format: {{ $json.targetFormat }}\n   - If \"Single Choice\": Provide 4 options (A-D) with exactly 1 correct answer.\n   - If \"Multiple Choice\": Provide 4 options (A-D) with 2 or 3 correct answers. Explicitly state how many correct answers to select in the question text.\n   - If \"Short Answer\": Set \"options\" to an empty array []. Provide key grading criteria in \"correctAnswer\".\n\n2. FORMATTING RULES FOR EXPLANATION & REFERENCES:\n   - Wrap core quotes or direct principles inside single asterisks for Markdown italics (e.g., *this is a key principle*).\n   - DO NOT use double quotes (\"...\") for quotes inside the explanation string.\n   - For \"webReferences\", pick 1 to 3 URLs ONLY from the VERIFIED SOURCE URLS list above. Do NOT invent or construct any new URLs.\n   - the URLs must be place inbetween <the-link> to avoid having embeded \n\n3. Output the response in clean JSON format matching this exact schema:\n\n{\n  \"questionType\": \"{{ $json.targetFormat }}\",\n  \"category\": \"{{ $json.category }}\",\n  \"sourceCitation\": \"{{ $json.sourceCitation }}\",\n  \"question\": \"Clear and scenario-based or conceptual question\",\n  \"options\": [\n    \"A) Option 1\",\n    \"B) Option 2\",\n    \"C) Option 3\",\n    \"D) Option 4\"\n  ],\n  \"correctAnswer\": \"Exact correct option letter(s) or key grading points for short answer\",\n  \"explanationIntro\": \"Brief context explaining why this choice is correct.\",\n  \"explanationQuote\": \"Exact rule, definition, or concept formatted strictly using Markdown italics like *this exact principle*.\",\n  \"webReferences\": [\n    \"SELECTED_VERIFIED_URL\"\n  ]\n}\n\nNote: For \"Short Answer\" format, set \"options\" to an empty array [].\nReturn ONLY valid JSON without markdown wrapping."
             }
           ]
         },
@@ -268,12 +268,170 @@
       "type": "@n8n/n8n-nodes-langchain.googleGemini",
       "typeVersion": 1.2,
       "position": [
-        1472,
-        16
+        1024,
+        240
       ],
-      "id": "f2d4666f-098d-4405-bc7f-4d3a6a5b846c",
+      "id": "c8724bd8-3f49-40b1-9b3f-4d55be90a40b",
       "name": "Generate Quiz (web)",
       "retryOnFail": true,
       "credentials": {
         "googlePalmApi": {
-          "id": "YOUR_
+          "id": "YOUR_GOOGLE_GEMINI_CREDENTIAL_ID",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-flash-lite-latest",
+          "mode": "list",
+          "cachedResultName": "models/gemini-flash-lite-latest"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are an expert examiner creating assessment questions for learners.\n\nBased ON ONLY the source material provided below, generate ONE high-quality quiz question.\n\nSOURCE METADATA:\n- Topic/Source: {{ $json.sourceName }}\n- Category: {{$json.category }}\n- Reference: {{ $json.sourceCitation }}\n\nSOURCE TEXT:\n\"\"\"\n{{ $json.extractedContent }}\n\"\"\"\n\nQUESTION REQUIREMENTS:\n1. You MUST generate a question strictly in this format: {{ $json.targetFormat }}\n- If \"Single Choice\": Provide 4 options (A-D) with exactly 1 correct answer.\n- If \"Multiple Choice\": Provide 4 options (A-D) with 2 or 3 correct answers. Specify how many to select in the question text.\n- If \"Short Answer\": Set \"options\" to an empty array []. Provide key grading criteria in \"correctAnswer\".\n\n2. FORMATTING RULES FOR EXPLANATION:\n   - When quoting direct text or excerpts from the source, wrap the quoted phrase inside single asterisks for Markdown italics (e.g., *this is a direct quote*).\n   - DO NOT use double quotes (\"...\") for quotes inside the JSON string.\n\n3. Output the response in clean JSON format matching this exact schema:\n\n{\n  \"questionType\": \"Single Choice | Multiple Choice | Short Answer\",\n  \"category\": \"{{ $json.category }}\",\n  \"sourceCitation\": \"{{ $json.sourceCitation }}\",\n  \"question\": \"Clear and scenario-based or conceptual question\",\n  \"options\": [\n    \"A) Option 1\",\n    \"B) Option 2\",\n    \"C) Option 3\",\n    \"D) Option 4\"\n  ],\n  \"correctAnswer\": \"Exact correct option letter(s) or key points for short answer\",\n  \"explanation\": \"Detailed explanation. Any direct quote from source MUST be formatted using Markdown italics like *exact quoted text* without double quotes.\"\n}\n\nNote: For \"Short Answer\" format, set \"options\" to an empty array [].\nReturn ONLY valid JSON without markdown wrapping."
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        1024,
+        48
+      ],
+      "id": "b6b26021-cf61-4f0f-bd64-f850023a2aad",
+      "name": "Generate Quiz (PDF)",
+      "retryOnFail": true,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "YOUR_GOOGLE_GEMINI_CREDENTIAL_ID",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://discord.com/api/v10/channels/YOUR_DISCORD_FORUM_CHANNEL_ID/threads",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "discordBotApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{\n{\n  \"name\": `Quiz \"${$json.category}\"`,\n  \"message\": {\n    \"content\": `### 📝 Daily Knowledge Quiz\n**Category:** ${$json.category}\n**Type:** ${$json.questionType}\n**Source:** ${$json.sourceCitation}\n---\n**Question:**\n${$json.question}\n${$json.options && $json.options.length > 0 ? \"---\\n\\n**Options:**\\n\" + $json.options.join(\"\\n\") : \"\"}\n---\n💡 **How to Answer:**\n${\n  $json.questionType === 'Short Answer'\n    ? ' • Type `/ans` and enter your 2–3 sentence response.\\n • The official answer and detailed breakdown will be posted publicly in this thread in **3 hours**.'\n    : $json.questionType === 'Multiple Choice'\n    ? ' • Select all correct options from the dropdown below and submit.\\n • You will receive an **instant private reply** confirming if you got it right along with a detailed explanation!\\n • The official answer and detailed breakdown will be posted publicly in this thread in **3 hours**.'\n    : ' • Click one of the buttons below (A, B, C, or D) to submit your answer.\\n • You will receive an **instant private reply** confirming if you got it right along with a detailed explanation!\\n • The official answer and detailed breakdown will be posted publicly in this thread in **3 hours**.\\n'\n}`,\n    \"components\": $json.questionType === 'Short Answer' \n      ? [] \n      : $json.questionType === 'Multiple Choice'\n      ? [\n          {\n            \"type\": 1,\n            \"components\": [\n              {\n                \"type\": 3,\n                \"custom_id\": \"quiz_select_multi\",\n                \"options\": $json.options.map((opt, i) => ({\n                  \"label\": opt.substring(0, 100),\n                  \"value\": String.fromCharCode(65 + i)\n                })),\n                \"placeholder\": \"Choose your answers...\",\n                \"min_values\": 1,\n                \"max_values\": 4\n              }\n            ]\n          }\n        ]\n      : [\n          {\n            \"type\": 1,\n            \"components\": [\n              { \"type\": 2, \"label\": \"A\", \"style\": 1, \"custom_id\": \"quiz_opt_A\" },\n              { \"type\": 2, \"label\": \"B\", \"style\": 1, \"custom_id\": \"quiz_opt_B\" },\n              { \"type\": 2, \"label\": \"C\", \"style\": 1, \"custom_id\": \"quiz_opt_C\" },\n              { \"type\": 2, \"label\": \"D\", \"style\": 1, \"custom_id\": \"quiz_opt_D\" }\n            ]\n          }\n        ]\n  }\n}\n}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1600,
+        240
+      ],
+      "id": "d60e526b-6db1-4ecb-a52e-5c8b6dc1750a",
+      "name": "Post Quiz as New Thread1",
+      "credentials": {
+        "discordBotApi": {
+          "id": "YOUR_DISCORD_BOT_CREDENTIAL_ID",
+          "name": "Discord Bot account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1. Join all text parts from Gemini output\nconst parts = $input.item.json.content?.parts || [];\nconst rawText = parts.map(part => part.text || '').join('');\n\n// 2. Strip markdown backticks\nconst cleanJsonString = rawText\n  .replace(/```json/gi, '')\n  .replace(/```/g, '')\n  .trim();\n\n// 3. Parse JSON string\nconst quizData = JSON.parse(cleanJsonString);\n\n// 4. Extract explanation intro vs quote if present\nlet introText = quizData.explanationIntro || \"According to reference documentation:\";\nlet rawQuote = quizData.explanationQuote || quizData.explanation;\n\nif (!quizData.explanationQuote && quizData.explanation) {\n  const quoteMatch = quizData.explanation.match(/'([^']+)'|\"([^\"]+)\"/);\n  if (quoteMatch) {\n    rawQuote = quoteMatch[1] || quoteMatch[2];\n    introText = quizData.explanation.replace(quoteMatch[0], '').trim();\n  }\n}\n\n// 5. Collect ALL reference URLs (from JSON fields + Gemini groundingMetadata)\nconst urlSet = new Set();\n\nconst addUrl = (val) => {\n  if (!val) return;\n  if (Array.isArray(val)) {\n    val.forEach(addUrl);\n  } else if (typeof val === 'object' && val.url) {\n    urlSet.add(val.url.trim());\n  } else if (typeof val === 'string') {\n    const matches = val.match(/https?:\\/\\/[^\\s)>\\]]+/g);\n    if (matches) matches.forEach(u => urlSet.add(u.trim()));\n  }\n};\n\naddUrl(quizData.referenceUrls);\naddUrl(quizData.references);\naddUrl(quizData.webReferences);\naddUrl(quizData.sourceUrl);\naddUrl(quizData.source);\n\n// Also check Gemini's native search grounding chunks if present\nconst chunks = $input.item.json.groundingMetadata?.groundingChunks || [];\nchunks.forEach(c => {\n  if (c.web?.uri) urlSet.add(c.web.uri.trim());\n});\n\nconst allUrls = [...urlSet];\nconst webReferences = allUrls.length\n  ? allUrls.map(u => `• <${u}>`).join('\\n')\n  : '';\n\nreturn [\n  {\n    json: {\n      ...quizData,\n      explanationIntro: introText,\n      explanationQuote: rawQuote,\n      referenceUrls: allUrls,\n      webReferences\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1376,
+        240
+      ],
+      "id": "09e8033b-45e6-448e-81a6-6fbcf04aa9b4",
+      "name": "JSON Parsing1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const parts = $input.item.json.content.parts || [];\nconst rawText = parts.map(part => part.text || '').join('');\n\nconst cleanJsonString = rawText\n  .replace(/```json/gi, '')\n  .replace(/```/g, '')\n  .trim();\n\nconst quizData = JSON.parse(cleanJsonString);\n\n// Extract quote inside single/double quotes if present, or format explanation\nlet introText = \"According to the source documentation:\";\nlet rawQuote = quizData.explanation;\n\nconst quoteMatch = quizData.explanation.match(/'([^']+)'|\"([^\"]+)\"/);\nif (quoteMatch) {\n  rawQuote = quoteMatch[1] || quoteMatch[2];\n  introText = quizData.explanation.replace(quoteMatch[0], '').trim();\n}\n\nreturn [\n  {\n    json: {\n      ...quizData,\n      explanationIntro: introText,\n      explanationQuote: rawQuote\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1376,
+        48
+      ],
+      "id": "af31c843-2a04-46e1-b4b2-ea6a083d9598",
+      "name": "JSON Parsing"
+    },
+    {
+      "parameters": {
+        "jsCode": "const staticData = $getWorkflowStaticData('global');\nif (!staticData.quizzes) {\n  staticData.quizzes = {};\n}\n\n// Thread ID returned by whichever Post Quiz node just ran\nconst threadId = $input.item.json.id;\n\n// Dynamically grab quiz data from whichever branch executed (PDF vs. Web)\nlet quiz = null;\ntry {\n  if ($('JSON Parsing1').isExecuted) {\n    quiz = $('JSON Parsing1').item.json;\n  }\n} catch (e) {}\n\nif (!quiz) {\n  try {\n    if ($('JSON Parsing').isExecuted) {\n      quiz = $('JSON Parsing').item.json;\n    }\n  } catch (e) {}\n}\n\nif (!quiz) {\n  throw new Error('Could not find parsed quiz data from either JSON Parsing or JSON Parsing1.');\n}\n\n// Safely resolve fallback citation if PDF branch ran\nlet fallbackCitation = 'Web Research';\ntry {\n  if ($('Random Page').isExecuted) {\n    fallbackCitation = $('Random Page').item.json.sourceCitation;\n  }\n} catch (e) {}\n\nconst cleanQuote = (quiz.explanationQuote || quiz.explanation || '').replace(/^\\*+|\\*+$/g, '').trim();\nconst formattedExplanation = quiz.explanationIntro\n  ? `${quiz.explanationIntro}\\n> ${cleanQuote}`\n  : `> ${cleanQuote}`;\n\n// Normalize webReferences whether it is an array of URLs or already a formatted string\nconst normalizedWebRefs = Array.isArray(quiz.webReferences)\n  ? quiz.webReferences.map(u => `• <${u}>`).join('\\n')\n  : (typeof quiz.webReferences === 'string' && quiz.webReferences.trim()\n      ? quiz.webReferences\n      : (Array.isArray(quiz.referenceUrls) ? quiz.referenceUrls.map(u => `• <${u}>`).join('\\n') : ''));\n\nconst resolvedCitation = quiz.sourceCitation || fallbackCitation;\n\n// Store the answer key indexed by threadId\nstaticData.quizzes[threadId] = {\n  question: quiz.question,\n  targetFormat: quiz.targetFormat,\n  correctAnswer: quiz.correctAnswer,\n  explanation: formattedExplanation,\n  webReferences: normalizedWebRefs,\n  sourceCitation: resolvedCitation,\n  createdAt: Date.now(),\n  publicPosted: false\n};\n\n// Cleanup quizzes older than 7 days\nconst sevenDaysMs = 7 * 24 * 60 * 60 * 1000;\nfor (const [id, data] of Object.entries(staticData.quizzes)) {\n  if (Date.now() - data.createdAt > sevenDaysMs) {\n    delete staticData.quizzes[id];\n  }\n}\n\n// Pass threadId, parsed quiz fields, and normalized references forward\nreturn [{\n  json: {\n    ...quiz,\n    threadId,\n    explanation: formattedExplanation,\n    webReferences: normalizedWebRefs,\n    sourceCitation: resolvedCitation\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1824,
+        144
+      ],
+      "id": "14448eaa-86c0-4db4-94bc-700f72e50373",
+      "name": "Save Quiz Key"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "discord-quiz-interactions",
+        "responseMode": "responseNode",
+        "options": {
+          "rawBody": true
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.2,
+      "position": [
+        -448,
+        560
+      ],
+      "id": "61381585-44ad-4e1b-a1d7-2891148a53a1",
+      "name": "Listen to Click",
+      "webhookId": "5225b1a5-7c39-421e-9592-95fd68ce9332"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const PUBLIC_KEY_HEX = $env.DISCORD_PUBLIC_KEY || 'YOUR_DISCORD_APPLICATION_PUBLIC_KEY_HEX';\n\nconst rawItem = $('Listen to Click').item.json;\nconst headers = rawItem.headers || {};\nconst signature = headers['x-signature-ed25519'] || headers['X-Signature-Ed25519'];\nconst timestamp = headers['x-signature-timestamp'] || headers['X-Signature-Timestamp'];\n\n// Use exact raw body string if available, otherwise stringify body\nconst rawBody = typeof rawItem.rawBody === 'string'\n  ? rawItem.rawBody\n  : JSON.stringify(rawItem.body || rawItem);\n\n// --- Pure-JS SHA-512 + Ed25519 Verifier (Zero dependencies) ---\nconst K512 = [\n  0x428a2f98d728ae22n,0x7137449123ef65cdn,0xb5c0fbcfec4d3b2fn,0xe9b5dba58189dbbcn,\n  0x3956c25bf348b538n,0x59f111f1b605d019n,0x923f82a4af194f9bn,0xab1c5ed5da6d8118n,\n  0xd807aa98a3030242n,0x12835b0145706fben,0x243185be4ee4b28cn,0x550c7dc3d5ffb4e2n,\n  0x72be5d74f27b896fn,0x80deb1fe3b1696b1n,0x9bdc06a725c71235n,0xc19bf174cf692694n,\n  0xe49b69c19ef14ad2n,0xefbe4786384f25e3n,0x0fc19dc68b8cd5b5n,0x240ca1cc77ac9c65n,\n  0x2de92c6f592b0275n,0x4a7484aa6ea6e483n,0x5cb0a9dcbd41fbd4n,0x76f988da831153b5n,\n  0x983e5152ee66dfabn,0xa831c66d2db43210n,0xb00327c898fb213fn,0xbf597fc7beef0ee4n,\n  0xc6e00bf33da88fc2n,0xd5a79147930aa725n,0x06ca6351e003826fn,0x142929670a0e6e70n,\n  0x27b70a8546d22ffcn,0x2e1b21385c26c926n,0x4d2c6dfc5ac42aedn,0x53380d139d95b3dfn,\n  0x650a73548baf63den,0x766a0abb3c77b2a8n,0x81c2c92e47edaee6n,0x92722c851482353bn,\n  0xa2bfe8a14cf10364n,0xa81a664bbc423001n,0xc24b8b70d0f89791n,0xc76c51a30654be30n,\n  0xd192e819d6ef5218n,0xd69906245565a910n,0xf40e35855771202an,0x106aa07032bbd1b8n,\n  0x19a4c116b8d2d0c8n,0x1e376c085141ab53n,0x2748774cdf8eeb99n,0x34b0bcb5e19b48a8n,\n  0x391c0cb3c5c95a63n,0x4ed8aa4ae3418acbn,0x5b9cca4f7763e373n,0x682e6ff3d6b2b8a3n,\n  0x748f82ee5defb2fcn,0x78a5636f43172f60n,0x84c87814a1f0ab72n,0x8cc702081a6439ecn,\n  0x90befffa23631e28n,0xa4506cebde82bde9n,0xbef9a3f7b2c67915n,0xc67178f2e372532bn,\n  0xca273eceea26619cn,0xd186b8c721c0c207n,0xeada7dd6cde0eb1en,0xf57d4f7fee6ed178n,\n  0x06f067aa72176fban,0x0a637dc5a2c898a6n,0x113f9804bef90daen,0x1b710b35131c471bn,\n  0x28db77f523047d84n,0x32caab7b40c72493n,0x3c9ebe0a15c9bebcn,0x431d67c49c100d4cn,\n  0x4cc5d4becb3e42b6n,0x597f299cfc657e2an,0x5fcb6fab3ad6faecn,0x6c44198c4a475817n\n];\n\nfunction rotr64(x, n) {\n  return ((x >> n) | (x << (64n - n))) & 0xffffffffffffffffn;\n}\n\nfunction sha512(msg) {\n  const bitLen = BigInt(msg.length) * 8n;\n  const padLen = ((msg.length + 17 + 127) & ~127);\n  const buf = new Uint8Array(padLen);\n  buf.set(msg);\n  buf[msg.length] = 0x80;\n  const dv = new DataView(buf.buffer);\n  dv.setBigUint64(padLen - 8, bitLen, false);\n\n  let H = [\n    0x6a09e667f3bcc908n,0xbb67ae8584caa73bn,0x3c6ef372fe94f82bn,0xa54ff53a5f1d36f1n,\n    0x510e527fade682d1n,0x9b05688c2b3e6c1fn,0x1f83d9abfb41bd6bn,0x5be0cd19137e2179n\n  ];\n\n  const W = new Array(80);\n  for (let i = 0; i < padLen; i += 128) {\n    for (let t = 0; t < 16; t++) W[t] = dv.getBigUint64(i + t * 8, false);\n    for (let t = 16; t < 80; t++) {\n      const s0 = rotr64(W[t - 15], 1n) ^ rotr64(W[t - 15], 8n) ^ (W[t - 15] >> 7n);\n      const s1 = rotr64(W[t - 2], 19n) ^ rotr64(W[t - 2], 61n) ^ (W[t - 2] >> 6n);\n      W[t] = (W[t - 16] + s0 + W[t - 7] + s1) & 0xffffffffffffffffn;\n    }\n    let [a, b, c, d, e, f, g, h] = H;\n    for (let t = 0; t < 80; t++) {\n      const S1 = rotr64(e, 14n) ^ rotr64(e, 18n) ^ rotr64(e, 41n);\n      const ch = (e & f) ^ (~e & g);\n      const t1 = (h + S1 + ch + K512[t] + W[t]) & 0xffffffffffffffffn;\n      const S0 = rotr64(a, 28n) ^ rotr64(a, 34n) ^ rotr64(a, 39n);\n      const maj = (a & b) ^ (a & c) ^ (b & c);\n      const t2 = (S0 + maj) & 0xffffffffffffffffn;\n      h = g; g = f; f = e; e = (d + t1) & 0xffffffffffffffffn;\n      d = c; c = b; b = a; a = (t1 + t2) & 0xffffffffffffffffn;\n    }\n    H = [\n      (H[0] + a) & 0xffffffffffffffffn, (H[1] + b) & 0xffffffffffffffffn,\n      (H[2] + c) & 0xffffffffffffffffn, (H[3] + d) & 0xffffffffffffffffn,\n      (H[4] + e) & 0xffffffffffffffffn, (H[5] + f) & 0xffffffffffffffffn,\n      (H[6] + g) & 0xffffffffffffffffn, (H[7] + h) & 0xffffffffffffffffn\n    ];\n  }\n  const out = new Uint8Array(64);\n  const outDv = new DataView(out.buffer);\n  for (let i = 0; i < 8; i++) outDv.setBigUint64(i * 8, H[i], false);\n  return out;\n}\n\nconst P = (1n << 255n) - 19n;\nconst L = (1n << 252n) + 27742317777372353535851937790883648493n;\nconst D = 37095705934669439343138083508754565189542113879843219016388785533085940283555n;\nconst I = 19681161376707505956807079304988542015446066515923890162744021073123829784752n;\nconst Bx = 15112221349535400772501151409588531511454012693041857206046113283949847762202n;\nconst By = 46316835694926478169428394003475163141307993866256225615783033603165251855960n;\n\nfunction mod(a, m = P) { const r = a % m; return r >= 0n ? r : r + m; }\nfunction powMod(b, e, m = P) {\n  let r = 1n; b = mod(b, m);\n  while (e > 0n) { if (e & 1n) r = mod(r * b, m); e >>= 1n; b = mod(b * b, m); }\n  return r;\n}\nfunction inv(x) { return powMod(x, P - 2n); }\nfunction bytesToBigIntLE(b) {\n  let r = 0n;\n  for (let i = b.length - 1; i >= 0; i--) r = (r << 8n) | BigInt(b[i]);\n  return r;\n}\nfunction bigIntToBytesLE(n) {\n  const b = new Uint8Array(32);\n  for (let i = 0; i < 32; i++) { b[i] = Number(n & 0xffn); n >>= 8n; }\n  return b;\n}\nfunction hexToBytes(hex) {\n  const b = new Uint8Array(hex.length / 2);\n  for (let i = 0; i < hex.length; i += 2) b[i / 2] = parseInt(hex.substr(i, 2), 16);\n  return b;\n}\nfunction decodePoint(b) {\n  const y = bytesToBigIntLE(b) & ((1n << 255n) - 1n);\n  if (y >= P) return null;\n  const sign = (b[31] >> 7) & 1;\n  const y2 = mod(y * y);\n  const u = mod(y2 - 1n);\n  const v = mod(D * y2 + 1n);\n  const v3 = mod(v * v * v);\n  const v7 = mod(v3 * v3 * v);\n  let x = mod(u * v3 * powMod(mod(u * v7), (P - 5n) / 8n));\n  const check = mod(v * x * x);\n  if (check === mod(-u)) x = mod(x * I);\n  else if (check !== u) return null;\n  if (x === 0n && sign === 1) return null;\n  if (Number(x & 1n) !== sign) x = mod(-x);\n  return [x, y];\n}\nfunction encodePoint([x, y]) {\n  const b = bigIntToBytesLE(y);\n  if (x & 1n) b[31] |= 0x80;\n  return b;\n}\nfunction edAdd([x1, y1], [x2, y2]) {\n  const a = mod((y1 - x1) * (y2 - x2));\n  const b = mod((y1 + x1) * (y2 + x2));\n  const c = mod(2n * D * x1 * x2 * y1 * y2);\n  const d = mod(2n);\n  const e = mod(b - a);\n  const f = mod(d - c);\n  const g = mod(d + c);\n  const h = mod(b + a);\n  return [mod(e * f * inv(f * g)), mod(g * h * inv(f * g))];\n}\nfunction edMul(pt, s) {\n  let r = [0n, 1n], p = pt;\n  while (s > 0n) { if (s & 1n) r = edAdd(r, p); p = edAdd(p, p); s >>= 1n; }\n  return r;\n}\n\nfunction verifyEd25519(sigHex, msgBytes, pubHex) {\n  if (!sigHex || sigHex.length !== 128 || !pubHex || pubHex.length !== 64) return false;\n  const sig = hexToBytes(sigHex);\n  const pub = hexToBytes(pubHex);\n  const R = decodePoint(sig.slice(0, 32));\n  const A = decodePoint(pub);\n  const S = bytesToBigIntLE(sig.slice(32, 64));\n  if (!R || !A || S >= L) return false;\n  const hInput = new Uint8Array(64 + msgBytes.length);\n  hInput.set(sig.slice(0, 32), 0);\n  hInput.set(pub, 32);\n  hInput.set(msgBytes, 64);\n  const k = mod(bytesToBigIntLE(sha512(hInput)), L);\n  const lhs = encodePoint(edMul([Bx, By], S));\n  const rhs = encodePoint(edAdd(R, edMul(A, k)));\n  for (let i = 0; i < 32; i++) if (lhs[i] !== rhs[i]) return false;\n  return true;\n}\n\n// 1. Verify Discord Signature\nconst msgBytes = new TextEncoder().encode((timestamp || '') + rawBody);\nconst isValid = verifyEd25519(signature, msgBytes, PUBLIC_KEY_HEX);\n\nif (!isValid) {\n  return {\n    json: {\n      route: 'respond_now',\n      statusCode: 401,\n      responseBody: { error: 'Invalid request signature' }\n    }\n  };\n}\n\nconst body = rawItem.body || JSON.parse(rawBody);\n\n// 2. Reply to Discord Verification PING (type: 1)\nif (body && body.type === 1) {\n  return {\n    json: {\n      route: 'respond_now',\n      statusCode: 200,\n      responseBody: { type: 1 }\n    }\n  };\n}\n\n// Load saved quiz keys from Extract from File JSON output\nconst extracted = $('Extract keys').item.json;\nconst quizzes = (extracted && typeof extracted.data === 'object' && !Array.isArray(extracted.data))\n  ? extracted.data\n  : (extracted || {});\n\n// 3. Handle Button / Dropdown Clicks (type: 3 — Path 2A)\nif (body && body.type === 3) {\n  const threadId = body.channel_id;\n  const quizKey = quizzes[threadId] || null;\n\n  if (!quizKey) {\n    return {\n      json: {\n        route: 'respond_now',\n        statusCode: 200,\n        responseBody: {\n          type: 4,\n          data: {\n            flags: 64,\n            content: `⚠️ Key not found!\\n• Clicked \\`channel_id\\`: \\`${threadId}\\`\\n• Saved thread IDs in file: \\`${JSON.stringify(Object.keys(quizzes))}\\``\n          }\n        }\n      }\n    };\n  }\n\n  let selected = [];\n  if (body.data.component_type === 2) {\n    selected.push(body.data.custom_id.replace('quiz_opt_', ''));\n  } else if (body.data.component_type === 3) {\n    selected = body.data.values || [];\n  }\n\n  const userStr = selected.map(s => s.trim().toUpperCase()).sort().join(', ');\n  const correctStr = String(quizKey.correctAnswer)\n    .split(',')\n    .map(s => s.trim().toUpperCase())\n    .sort()\n    .join(', ');\n\n  const isCorrect = userStr === correctStr;\n  const statusHeader = isCorrect\n    ? `🎉 **Correct!** You chose **${userStr}**.`\n    : `❌ **Not quite.** You chose **${userStr}**, while the correct answer is **${correctStr}**.`;\n\n  const refsBlock = quizKey.webReferences ? `\\n\\n🔗 **References:**\\n${quizKey.webReferences}` : '';\n\n  return {\n    json: {\n      route: 'respond_now',\n      statusCode: 200,\n      responseBody: {\n        type: 4,\n        data: {\n          flags: 64,\n          content: `${statusHeader}\\n\\n💡 **Explanation:**\\n${quizKey.explanation}${refsBlock}`\n        }\n      }\n    }\n  };\n}\n\n// 4. Handle Slash Commands (type: 2 — Path 2B: /ans)\nif (body && body.type === 2 && body.data.name === 'ans') {\n  const threadId = body.channel_id;\n  const quizKey = quizzes[threadId] || null;\n  const userText = body.data.options?.[0]?.value || '';\n  const userId = body.member?.user?.id || body.user?.id;\n\n  if (!quizKey) {\n    return {\n      json: {\n        route: 'respond_now',\n        statusCode: 200,\n        responseBody: {\n          type: 4,\n          data: {\n            flags: 64,\n            content: \"⚠️ Please run `/ans` inside an active quiz thread (this thread has no active answer key).\"\n          }\n        }\n      }\n    };\n  }\n\n  return {\n    json: {\n      route: 'grade_short_answer',\n      applicationId: body.application_id,\n      interactionToken: body.token,\n      userId,\n      userText,\n      question: quizKey.question,\n      correctAnswer: quizKey.correctAnswer,\n      explanation: quizKey.explanation\n    }\n  };\n}\n\nreturn {\n  json: {\n    route: 'respond_now',\n    statusCode: 200,\n    responseBody: { type: 1 }\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        560
+      ],
+      "id": "a4d21ffe-8e95-4303-86c9-f50fce34f7f3",
+      "name": "Router & Verifier"
+    },
+    {
+      "parameters": {
+        "fileSelector": "={{$env.QUIZ_DATA_DIR}}/quiz_keys.json",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1.1,
+      "position": [
+        2048,
+        144
+      ],
+      "id": "f7022d21-bc88-4066-9f0f-7948c32ff9ef",
+      "name": "Read Existing Keys",
+      "alwaysOutputData": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Load existing keys if the file was found\nlet quizzes = {};\ntry {\n  if ($input.item.binary?.data) {\n    const buf = await this.helpers.getBinaryDataBuffer(0, 'data');\n    quizzes = JSON.parse(buf.toString('utf8'));\n  }\n} catch (e) {\n  quizzes = {};\n}\n\n// Grab the new quiz from Save Quiz Key\nconst newQuiz = $('Save Quiz Key').item.json;\n\n// Normalize webReferences whether it arrives as a formatted string or an array\nconst normalizedWebRefs = Array.isArray(newQuiz.webReferences)\n  ? newQuiz.webReferences.map(u => `• <${u}>`).join('\\n')\n  : (typeof newQuiz.webReferences === 'string' && newQuiz.webReferences.trim()\n      ? newQuiz.webReferences\n      : (Array.isArray(newQuiz.referenceUrls) ? newQuiz.referenceUrls.map(u => `• <${u}>`).join('\\n') : ''));\n\nquizzes[newQuiz.threadId] = {\n  question: newQuiz.question,\n  targetFormat: newQuiz.targetFormat,\n  correctAnswer: newQuiz.correctAnswer,\n  explanation: newQuiz.explanation,\n  webReferences: normalizedWebRefs,\n  sourceCitation: newQuiz.sourceCitation || 'Web Research',\n  createdAt: Date.now(),\n  publicPosted: false\n};\n\n// Clean up entries older than 7 days\nconst sevenDaysMs = 7 * 24 * 60 * 60 * 1000;\nfor (const [id, data] of Object.entries(quizzes)) {\n  if (Date.now() - data.createdAt > sevenDaysMs) {\n    delete quizzes[id];\n  }\n}\n\n// Convert updated dictionary into a binary JSON file for Write File node\nconst base64Data = Buffer.from(JSON.stringify(quizzes, null, 2), 'utf8').toString('base64');\nreturn [{\n  json: {\n    ...newQuiz,\n    webReferences: normalizedWebRefs\n  },\n  binary: {\n    data: {\n      data: base64Data,\n      mimeType: 'application/json',\n      fileName: 'quiz_keys.json'\n    }\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion":
