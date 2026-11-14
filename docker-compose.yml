@@ -27,6 +27,7 @@ services:
       - N8N_BLOCK_ENV_ACCESS_IN_NODE=false
       - N8N_RESTRICT_FILE_ACCESS_TO=/data
       - NODE_FUNCTION_ALLOW_BUILTIN=crypto
+      - TAVILY_API_KEY=${TAVILY_API_KEY}
     volumes:
       - ./data:/home/node/.n8n
       - ./files:/data
