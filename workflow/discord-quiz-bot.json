@@ -142,8 +142,8 @@
       "type": "n8n-nodes-base.wait",
       "typeVersion": 1.1,
       "position": [
-        2512,
-        -48
+        2720,
+        144
       ],
       "id": "2c5fc910-22b4-4b0e-a1af-18e2fc3de559",
       "name": "Wait",
@@ -157,7 +157,7 @@
         "nodeCredentialType": "discordBotApi",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{\n{\n  \"name\": `Quiz \"${$json.category}\"`,\n  \"message\": {\n    \"content\": `### 📝  Daily Knowledge Quiz\n**Category:** ${$json.category}\n**Type:** ${$json.questionType}\n---\n**Question:**\n${$json.question}\n${$json.options && $json.options.length > 0 ? \"---\\n\\n**Options:**\\n\" + $json.options.join(\"\\n\") : \"\"}\n---\n💡 **How to Answer:**\n${\n  $json.questionType === 'Short Answer'\n    ? '•  Type `/ans` and enter your 2–3 sentence response.\\n •  The bot will evaluate your answer privately or you can review the official key in 3 hours.'\n    : $json.questionType === 'Multiple Choice'\n    ? ' •  Select all correct options from the dropdown below and submit.\\n •  You will receive an instant private reply with feedback!'\n    : ' •  Click one of the buttons below (A, B, C, or D) to submit your answer.\\n •  You will receive an instant private reply with feedback!'\n}\\n •  Official breakdown posted in **3 hours**.`,\n    \"components\": $json.questionType === 'Short Answer' \n      ? [] \n      : $json.questionType === 'Multiple Choice'\n      ? [\n          {\n            \"type\": 1,\n            \"components\": [\n              {\n                \"type\": 3,\n                \"custom_id\": \"quiz_select_multi\",\n                \"options\": $json.options.map((opt, i) => ({\n                  \"label\": opt.substring(0, 25),\n                  \"value\": String.fromCharCode(65 + i),\n                  \"description\": opt.substring(0, 50)\n                })),\n                \"placeholder\": \"Choose your answers...\",\n                \"min_values\": 1,\n                \"max_values\": 4\n              }\n            ]\n          }\n        ]\n      : [\n          {\n            \"type\": 1,\n            \"components\": [\n              { \"type\": 2, \"label\": \"A\", \"style\": 1, \"custom_id\": \"quiz_opt_A\" },\n              { \"type\": 2, \"label\": \"B\", \"style\": 1, \"custom_id\": \"quiz_opt_B\" },\n              { \"type\": 2, \"label\": \"C\", \"style\": 1, \"custom_id\": \"quiz_opt_C\" },\n              { \"type\": 2, \"label\": \"D\", \"style\": 1, \"custom_id\": \"quiz_opt_D\" }\n            ]\n          }\n        ]\n  }\n}\n}}",
+        "jsonBody": "={{\n{\n  \"name\": `Quiz \"${$json.category}\"`,\n  \"message\": {\n    \"content\": `### 📝  Daily Knowledge Quiz\n**Category:** ${$json.category}\n**Type:** ${$json.questionType}\n---\n**Question:**\n${$json.question}\n${$json.options && $json.options.length > 0 ? \"---\\n\\n**Options:**\\n\" + $json.options.join(\"\\n\") : \"\"}\n---\n💡 **How to Answer:**\n${\n  $json.questionType === 'Short Answer'\n    ? '•  Type `/ans` and enter your 2–3 sentence response.\\n •  The bot will evaluate your answer privately or you can review the official key in 3 hours.'\n    : $json.questionType === 'Multiple Choice'\n    ? ' •  Select all correct options from the dropdown below and submit.\\n •  You will get an instant private reply with feedback!'\n    : ' •  Click one of the buttons below (A, B, C, or D) to submit your answer.\\n •  You will get an instant private reply with feedback!'\n}\\n •  Official breakdown posted in **3 hours**.`,\n    \"components\": $json.questionType === 'Short Answer' \n      ? [] \n      : $json.questionType === 'Multiple Choice'\n      ? [\n          {\n            \"type\": 1,\n            \"components\": [\n              {\n                \"type\": 3,\n                \"custom_id\": \"quiz_select_multi\",\n                \"options\": $json.options.map((opt, i) => ({\n                  \"label\": opt.substring(0, 25),\n                  \"value\": String.fromCharCode(65 + i),\n                  \"description\": opt.substring(0, 50)\n                })),\n                \"placeholder\": \"Choose your answers...\",\n                \"min_values\": 1,\n                \"max_values\": 4\n              }\n            ]\n          }\n        ]\n      : [\n          {\n            \"type\": 1,\n            \"components\": [\n              { \"type\": 2, \"label\": \"A\", \"style\": 1, \"custom_id\": \"quiz_opt_A\" },\n              { \"type\": 2, \"label\": \"B\", \"style\": 1, \"custom_id\": \"quiz_opt_B\" },\n              { \"type\": 2, \"label\": \"C\", \"style\": 1, \"custom_id\": \"quiz_opt_C\" },\n              { \"type\": 2, \"label\": \"D\", \"style\": 1, \"custom_id\": \"quiz_opt_D\" }\n            ]\n          }\n        ]\n  }\n}\n}}",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
@@ -189,8 +189,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.5,
       "position": [
-        2736,
-        -48
+        2944,
+        144
       ],
       "id": "d2e04a3b-aae2-48a6-9bbb-42a90d3c9fed",
       "name": "Post Public Answer",
@@ -438,7 +438,7 @@
       "typeVersion": 2,
       "position": [
         2272,
-        128
+        144
       ],
       "id": "3f9332d5-1c99-47e4-81e3-71c4cdebbccd",
       "name": "Merge & Prepare File"
@@ -453,8 +453,8 @@
       "type": "n8n-nodes-base.readWriteFile",
       "typeVersion": 1.1,
       "position": [
-        2512,
-        192
+        2496,
+        144
       ],
       "id": "fa91a0ee-3d07-4da4-928c-b89fb85d082e",
       "name": "Write Quiz Keys",
@@ -936,11 +936,6 @@
             "node": "Write Quiz Keys",
             "type": "main",
             "index": 0
-          },
-          {
-            "node": "Wait",
-            "type": "main",
-            "index": 0
           }
         ]
       ]
@@ -958,7 +953,13 @@
     },
     "Write Quiz Keys": {
       "main": [
-        []
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "If": {
