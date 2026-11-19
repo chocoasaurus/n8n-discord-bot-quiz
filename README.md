@@ -4,7 +4,7 @@ An automated Discord Forum quiz bot built with **n8n**, **Google Gemini**, and *
 
 Every day, the workflow generates a quiz from either a PDF knowledge source or live web research, posts it to a Discord Forum thread, grades responses privately, and publishes the official answer later.
 
-![Workflow Overview](docs/workflow-overview.png)
+![Workflow Overview](sample/workflow-overview.png)
 
 ---
 
@@ -40,7 +40,7 @@ Each day the workflow:
 | **Multiple Choice** | Discord dropdown |
 | **Short Answer** | `/ans` slash command |
 
-![Discord Preview](docs/discord-preview.png)
+![Discord Preview](sample/discord-preview.png)
 
 ---
 
